@@ -206,3 +206,81 @@ przed aktualizacją zrób kopię (krok 8).
 - [ ] Porty 9119, 3320, 3321 tylko na `127.0.0.1`.
 - [ ] Wylogowanie usuwa ciasteczko na danym urządzeniu. Żeby unieważnić **wszystkie** sesje
       (np. zgubiony telefon), zmień `SESSION_SECRET` i zrestartuj `broski-web`.
+
+## 11. Wariant dla serwera srv1982935 (na podstawie audytu Hermesa)
+
+Ustalenia z audytu: stara aplikacja działa **w kontenerze Hermesa** `hermes-agent-giao-hermes-agent-1`
+(`/opt/data` = host `/docker/hermes-agent-giao/data`), uruchamiana z hosta przez
+`command-center.service` (`docker exec … ./deploy/run-command-center.sh`). Ruch:
+`Traefik (TLS) → OAuth2 Proxy (Google) → command-center-proxy (nginx) → hermes-agent:3310`.
+Ten sam skrypt uruchamia `hermes serve` na `127.0.0.1:9119`.
+
+Różnice względem sekcji 3–6:
+
+1. **Kod i dane**: `/opt/data/broski` (kod), `/opt/data/broski-data/app.db` (baza), plik env np.
+   `/opt/data/broski-data/broski.env` (`600`). Wszystko w zamontowanym `/opt/data`, więc przetrwa
+   odtworzenie kontenera. Przed `npm ci` sprawdź w kontenerze `node -v` (wymagane ≥ 22.12),
+   a po instalacji: `node -e "require('better-sqlite3')"`.
+2. **web nasłuchuje na `0.0.0.0:3320` wewnątrz kontenera** (`next start -H 0.0.0.0 -p 3320`), bo nginx
+   działa w innym kontenerze i łączy się po sieci Dockera (`hermes-agent:3320`) — tak jak stara
+   aplikacja na 3310. Portu 3320 **nie publikuj** na hoście. Healthcheck workera zostaje na `127.0.0.1:3321`.
+3. **Nadzór procesów**: dwie usługi systemd na **hoście**, wzorowane na `command-center.service`:
+
+   ```ini
+   # /etc/systemd/system/broski-web.service
+   [Unit]
+   Description=Broski web (w kontenerze Hermesa)
+   After=docker.service
+   Requires=docker.service
+
+   [Service]
+   ExecStartPre=-/usr/bin/docker exec hermes-agent-giao-hermes-agent-1 pkill -f "next start -H 0.0.0.0 -p 3320"
+   ExecStart=/usr/bin/docker exec -w /opt/data/broski --env-file /docker/hermes-agent-giao/data/broski-data/broski.env hermes-agent-giao-hermes-agent-1 ./node_modules/.bin/next start -H 0.0.0.0 -p 3320
+   ExecStop=-/usr/bin/docker exec hermes-agent-giao-hermes-agent-1 pkill -f "next start -H 0.0.0.0 -p 3320"
+   Restart=always
+   RestartSec=5
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+   ```ini
+   # /etc/systemd/system/broski-worker.service
+   [Unit]
+   Description=Broski worker (w kontenerze Hermesa)
+   After=docker.service
+   Requires=docker.service
+
+   [Service]
+   ExecStartPre=-/usr/bin/docker exec hermes-agent-giao-hermes-agent-1 pkill -f "src/worker/main.ts"
+   ExecStart=/usr/bin/docker exec -w /opt/data/broski --env-file /docker/hermes-agent-giao/data/broski-data/broski.env hermes-agent-giao-hermes-agent-1 node --import tsx src/worker/main.ts
+   ExecStop=-/usr/bin/docker exec hermes-agent-giao-hermes-agent-1 pkill -TERM -f "src/worker/main.ts"
+   Restart=always
+   RestartSec=5
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+   `pkill` w `ExecStartPre`/`ExecStop` jest konieczny: zatrzymanie `docker exec` po stronie hosta
+   nie zawsze zabija proces w kontenerze, a osierocony `next start` blokowałby port 3320.
+   (Dwa workery naraz nie zepsują zadań — chroni je dzierżawa — ale nie powinny działać równolegle.)
+   `--env-file` czyta plik po stronie hosta, stąd ścieżka hostowa.
+4. **Przełączenie domeny**: w `/opt/command-center/nginx.conf` zmień tylko upstream `/` z
+   `http://hermes-agent:3310` na `http://hermes-agent:3320`; router `/preview` (3311) bez zmian.
+   Przed zmianą skopiuj plik (np. `nginx.conf.bak-<data>`); wycofanie = przywrócenie kopii +
+   `docker exec command-center-proxy nginx -s reload`. Dla SSE dodaj w tym `location`:
+   `proxy_buffering off; proxy_read_timeout 1h; proxy_http_version 1.1;`.
+5. **OAuth2 Proxy zostaje przed Broskim** (D-027). Wymagane zmiany w jego konfiguracji:
+   - pliki PWA muszą przechodzić bez logowania OAuth2 Proxy, bo przeglądarka pobiera manifest
+     bez ciasteczek — inaczej instalacja na telefonie nie zadziała. Dodaj (dla oauth2-proxy v7):
+     `--skip-auth-route=GET=^/manifest\.webmanifest$`, `--skip-auth-route=GET=^/sw\.js$`,
+     `--skip-auth-route=GET=^/offline\.html$`, `--skip-auth-route=GET=^/icons/`,
+     `--skip-auth-route=GET=^/icon\.svg$`, `--skip-auth-route=GET=^/api/health$`
+     (lub odpowiedniki `OAUTH2_PROXY_SKIP_AUTH_ROUTES`);
+   - sprawdź, że OAuth2 Proxy wpuszcza wyłącznie `sotuldrop@gmail.com`; jeśli wpuszcza więcej
+     adresów — opisz, nie zmieniaj bez zgody (może chronić też `/preview`).
+6. **Zależność dla etapu 6**: Hermes na `127.0.0.1:9119` jest dziś uruchamiany przez skrypt starej
+   aplikacji. Jeśli `command-center.service` zostanie zatrzymany, Broski straci Hermesa. Do etapu 6
+   (`HERMES_MODE=mock`) nie ma to znaczenia; przed etapem 6 trzeba uruchamiać `hermes serve`
+   niezależnie od starej aplikacji.

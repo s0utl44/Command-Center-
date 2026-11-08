@@ -129,3 +129,14 @@ unieważnienie wszystkich sesji = zmiana `SESSION_SECRET`. Wystarczy dla jednego
 ## D-026 Nazwa: Broski — przyjęta
 Dominik nazywa swojego agenta **Broski** („ziomek do zadań specjalnych”). Tak nazywa się aplikacja
 (manifest, tytuł, logowanie); ikona z mikrofonem bez zmian.
+
+## D-027 OAuth2 Proxy zostaje przed Broskim — tymczasowa
+Na serwerze domenę chroni już OAuth2 Proxy (Google) przed nginx (audyt Hermesa). Zostawiamy go
+jako dodatkową warstwę (chroni też `/preview` starej aplikacji), z wyjątkami dla plików PWA
+(manifest pobierany jest bez ciasteczek). Koszt: przy pierwszym wejściu dwa logowania Google
+(OAuth2 Proxy + Broski). Do rewizji po wygaszeniu starej aplikacji — wtedy wystarczy logowanie Broskiego.
+
+## D-013 (aktualizacja) Broski w kontenerze Hermesa — przyjęta
+Audyt: stara aplikacja działa w kontenerze Hermesa i ma tam loopback do `127.0.0.1:9119`.
+Broski działa w tym samym kontenerze (wariant A), nadzorowany z hosta przez systemd + `docker exec`
+(DEPLOYMENT.md, sekcja 11).
