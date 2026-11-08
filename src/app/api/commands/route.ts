@@ -13,7 +13,7 @@ const Body = z.object({
 
 /** Polecenie użytkownika → rozpoznanie procesu → trwałe zadanie (wykonuje worker). */
 export function POST(request: Request) {
-  return handle(async () => {
+  return handle(request, async () => {
     const body = await readJson(request, Body);
     const rt = getRuntime();
     const result = rt.service.submitUtterance(body);

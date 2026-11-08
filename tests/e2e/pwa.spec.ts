@@ -14,7 +14,7 @@ test("kryteria instalowalności: manifest sparsowany bez błędów i aktywny ser
   expect(parsed.errors).toEqual([]);
 
   const manifest = (await (await page.request.get("/manifest.webmanifest")).json()) as Record<string, unknown>;
-  expect(manifest).toMatchObject({ name: "Asystent Dominika", short_name: "Asystent", start_url: "/", display: "standalone" });
+  expect(manifest).toMatchObject({ name: "Broski", short_name: "Broski", start_url: "/", display: "standalone" });
 
   const active = await page.evaluate(async () => Boolean((await navigator.serviceWorker.ready).active));
   expect(active).toBe(true);

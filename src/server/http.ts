@@ -1,13 +1,18 @@
 import { z } from "zod";
 import { redact } from "@/core/redact";
+import { getSession } from "./auth/session";
 
 export function jsonError(status: number, message: string): Response {
   return Response.json({ error: message }, { status });
 }
 
-/** Wykonuje handler; błędy walidacji → 400, reszta → 500 bez szczegółów wewnętrznych w odpowiedzi. */
-export async function handle(fn: () => Promise<Response> | Response): Promise<Response> {
+/**
+ * Wykonuje handler API po sprawdzeniu sesji (obrona w głąb — proxy sprawdza ją wcześniej).
+ * Błędy walidacji → 400, reszta → 500 bez szczegółów wewnętrznych w odpowiedzi.
+ */
+export async function handle(request: Request, fn: () => Promise<Response> | Response): Promise<Response> {
   try {
+    if (!(await getSession(request))) return jsonError(401, "Wymagane logowanie");
     return await fn();
   } catch (error) {
     if (error instanceof z.ZodError) return jsonError(400, "Nieprawidłowe dane");

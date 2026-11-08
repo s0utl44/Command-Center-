@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 const Body = z.object({ mode: z.enum(["continue", "fresh"]) });
 
 export function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  return handle(async () => {
+  return handle(request, async () => {
     const { id } = await params;
     const { mode } = await readJson(request, Body);
     const rt = getRuntime();

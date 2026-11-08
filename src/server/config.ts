@@ -24,7 +24,7 @@ function positiveInt(value: string | undefined, fallback: number, name: string):
 }
 
 /** Konfiguracja z env. Sekrety (HERMES_TOKEN) czytane wyłącznie przez adapter, nigdy nie trafiają do obiektu konfiguracji. */
-export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+export function loadConfig(env: Readonly<Record<string, string | undefined>> = process.env): AppConfig {
   return {
     databasePath: env.DATABASE_PATH || "./data/app.db",
     hermesMode: mode(env.HERMES_MODE, "HERMES_MODE"),

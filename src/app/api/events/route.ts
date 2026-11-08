@@ -1,3 +1,4 @@
+import { getSession } from "@/server/auth/session";
 import { getRuntime } from "@/server/context";
 import { snapshot } from "@/server/tasks/view";
 
@@ -11,7 +12,8 @@ const HEARTBEAT_MS = 15_000;
  * SSE: wysyła migawkę zadań przy każdej zmianie w bazie. Źródłem prawdy jest baza (zapisuje ją
  * worker), więc strumień tylko odpytuje ją co sekundę — zerwanie połączenia niczego nie psuje.
  */
-export function GET(request: Request) {
+export async function GET(request: Request) {
+  if (!(await getSession(request))) return Response.json({ error: "Wymagane logowanie" }, { status: 401 });
   const encoder = new TextEncoder();
   let timer: ReturnType<typeof setInterval> | undefined;
   const stream = new ReadableStream<Uint8Array>({

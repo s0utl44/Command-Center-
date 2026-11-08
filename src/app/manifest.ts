@@ -3,9 +3,9 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Asystent Dominika",
-    short_name: "Asystent",
-    description: "Prywatny asystent głosowy",
+    name: "Broski",
+    short_name: "Broski",
+    description: "Twój ziomek do zadań specjalnych",
     lang: "pl",
     dir: "ltr",
     start_url: "/",

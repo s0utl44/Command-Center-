@@ -18,7 +18,7 @@ po przeładowaniu strony i po restarcie workera.
 | 2 | Worker + mock Hermesa | kolejka z dzierżawą, idempotency, wznowienie po zabiciu workera, `needs_attention` przy niejasnym stanie, weryfikacja N/N na mocku | ✅ |
 | 3 | Ekran „Mów” | MediaRecorder, mock STT, wpisywanie tekstu, pytanie o parametr, status przez SSE, stan po reloadzie (Playwright z fake mikrofonem) | ✅ |
 | 4 | PWA + „Dzisiaj” | manifest, service worker, instalowalność, lista zadań w 5 grupach, szczegóły z historią | ✅ |
-| 5 | Logowanie i wdrożenie | Auth.js + allowlista, „Procesy” i „Połączenia” tylko do odczytu, opis wdrożenia | ⏳ |
+| 5 | Logowanie i wdrożenie | logowanie Google + allowlista, „Procesy” i „Połączenia” tylko do odczytu, `docs/DEPLOYMENT.md` | ✅ |
 
 ## Po slice — wymaga serwera
 

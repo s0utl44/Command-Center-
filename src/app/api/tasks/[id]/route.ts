@@ -5,8 +5,8 @@ import { toTaskView } from "@/server/tasks/view";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  return handle(async () => {
+export function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  return handle(request, async () => {
     const { id } = await params;
     const rt = getRuntime();
     const task = rt.tasks.get(id);

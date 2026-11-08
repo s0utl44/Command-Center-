@@ -6,6 +6,7 @@ import { SCREENS } from "@/core/screens";
 
 export function BottomNav() {
   const pathname = usePathname();
+  if (pathname === "/login") return null;
   return (
     <nav className="bottom-nav" aria-label="Główna nawigacja">
       {SCREENS.map((screen) => {

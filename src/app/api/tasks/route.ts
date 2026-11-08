@@ -5,6 +5,6 @@ import { snapshot } from "@/server/tasks/view";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export function GET() {
-  return handle(() => Response.json(snapshot(getRuntime())));
+export function GET(request: Request) {
+  return handle(request, () => Response.json(snapshot(getRuntime())));
 }

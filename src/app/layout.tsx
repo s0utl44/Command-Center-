@@ -4,10 +4,10 @@ import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Asystent",
-  description: "Prywatny asystent głosowy Dominika",
-  applicationName: "Asystent",
-  appleWebApp: { capable: true, title: "Asystent", statusBarStyle: "black-translucent" },
+  title: "Broski",
+  description: "Broski — Twój ziomek do zadań specjalnych",
+  applicationName: "Broski",
+  appleWebApp: { capable: true, title: "Broski", statusBarStyle: "black-translucent" },
   icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icons/icon-192.png", sizes: "192x192" }], apple: "/icons/apple-touch-icon.png" },
 };
 

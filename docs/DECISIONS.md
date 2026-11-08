@@ -51,9 +51,9 @@ Hermes doda taką metodę.
 Każdy wynik z mocka jest oznaczony „SYMULACJA”. Ekran Połączenia bez prawdziwego sprawdzenia
 nie pokazuje „połączone”.
 
-## D-012 Logowanie przez Google z allowlistą — tymczasowa
-Auth.js, jedno dozwolone konto `sotuldrop@gmail.com`. Ewentualnie dodatkowo zabezpieczenie na
-poziomie reverse proxy — do decyzji przy wdrożeniu.
+## D-012 Logowanie przez Google z allowlistą — przyjęta (zrealizowane w D-024)
+Jedno dozwolone konto `sotuldrop@gmail.com`. Ewentualne dodatkowe zabezpieczenie na poziomie
+reverse proxy — opcjonalnie przy wdrożeniu.
 
 ## D-013 Gdzie uruchomić aplikację na serwerze — do potwierdzenia
 Hermes działa w kontenerze, endpoint tylko na loopbacku. `web`/`worker` muszą widzieć
@@ -115,3 +115,17 @@ manifestu (sprawdzone kontrolą negatywną), więc test e2e sprawdza kryteria be
 podpięty manifest sparsowany bez błędów (`Page.getAppManifest`), wymagane pola, ikony 192/512
 i aktywny service worker kontrolujący stronę. Instalację na prawdziwym telefonie trzeba
 potwierdzić ręcznie po wdrożeniu na HTTPS.
+
+## D-024 Własny, minimalny przepływ OAuth zamiast Auth.js — przyjęta
+next-auth v5 nadal nie ma wersji stabilnej (najnowsza stabilna: 4.24), a potrzebujemy tylko
+jednego konta. Własny kod (~200 linii, Web Crypto): Authorization Code + PKCE + `state`
+w podpisanym ciasteczku, wymiana kodu bezpośrednio z Google (więc podpis ID tokenu można pominąć
+wg OIDC Core 3.1.3.7), walidacja `iss`/`aud`/`exp`/`email_verified` i allowlisty. Bez nowych zależności.
+
+## D-025 Sesja bezstanowa — przyjęta
+Podpisane HMAC ciasteczko (30 dni), bez tabeli sesji. Wylogowanie usuwa ciasteczko na urządzeniu;
+unieważnienie wszystkich sesji = zmiana `SESSION_SECRET`. Wystarczy dla jednego użytkownika.
+
+## D-026 Nazwa: Broski — przyjęta
+Dominik nazywa swojego agenta **Broski** („ziomek do zadań specjalnych”). Tak nazywa się aplikacja
+(manifest, tytuł, logowanie); ikona z mikrofonem bez zmian.

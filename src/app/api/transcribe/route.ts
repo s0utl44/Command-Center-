@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 /** Nagranie → tekst. Audio nie jest zapisywane na dysku ani w bazie. */
 export function POST(request: Request) {
-  return handle(async () => {
+  return handle(request, async () => {
     const form = await request.formData().catch(() => {
       throw new UserError("Oczekiwano formularza z nagraniem");
     });

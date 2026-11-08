@@ -1,13 +1,14 @@
 # CLAUDE.md
 
-Prywatny mobilny asystent głosowy Dominika (PWA). Mikrofon → transkrypcja → rozpoznanie procesu →
+**Broski** — prywatny mobilny asystent głosowy Dominika (PWA), „ziomek do zadań specjalnych”. Mikrofon → transkrypcja → rozpoznanie procesu →
 brakujące parametry → trwałe zadanie → wykonanie przez Hermes Agent → weryfikacja → wynik.
 
 Zanim zaczniesz pracę, przeczytaj:
 - `docs/PRODUCT.md` — co budujemy i czego nie budujemy;
 - `docs/ARCHITECTURE.md` — kontrakt z Hermesem i zasady niezawodności;
 - `docs/MVP.md` — etapy i ich status;
-- `docs/DECISIONS.md` — decyzje; nowa decyzja = nowy wpis.
+- `docs/DECISIONS.md` — decyzje; nowa decyzja = nowy wpis;
+- `docs/DEPLOYMENT.md` — wdrożenie na serwer.
 
 ## Komendy
 
@@ -21,6 +22,9 @@ npm run build        # build produkcyjny
 npm run test:e2e     # Playwright (sam buduje i startuje aplikację)
 npm run check        # lint + typecheck + test + build
 ```
+
+Lokalnie aplikacja wymaga `SESSION_SECRET` (≥32 znaki) i zwykle `AUTH_MODE=dev` — patrz `.env.example`.
+Wdrożenie: `docs/DEPLOYMENT.md`.
 
 ## Zasady pracy
 

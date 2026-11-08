@@ -1,4 +1,6 @@
-# Produkt — prywatny asystent głosowy Dominika
+# Produkt — Broski, prywatny asystent głosowy Dominika
+
+**Broski** to „ziomek do zadań specjalnych” — tak Dominik nazywa swojego agenta.
 
 ## Jedno zdanie
 

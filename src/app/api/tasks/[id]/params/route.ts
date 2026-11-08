@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 const Body = z.object({ values: z.record(z.string(), z.string().max(2000)) });
 
 export function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  return handle(async () => {
+  return handle(request, async () => {
     const { id } = await params;
     const { values } = await readJson(request, Body);
     const rt = getRuntime();

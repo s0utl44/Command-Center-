@@ -159,7 +159,6 @@ unieważnia zgodę. Profile wykonania: `read-only`, `draft-only`, `write-with-ap
 | GET | `/api/events` | SSE: migawka przy każdej zmianie w bazie (odpytywanie co 1 s) |
 | GET | `/api/health` | healthcheck `web` (bez bazy) |
 
-⚠️ Do etapu 5 API **nie ma logowania** — nie wystawiać aplikacji publicznie przed etapem 5.
 Worker ma opcjonalny healthcheck `WORKER_HEALTH_PORT` (tylko `127.0.0.1`).
 
 ## Status w UI
@@ -187,7 +186,13 @@ transkrypcji. Zawsze dostępne jest wpisanie polecenia z klawiatury.
 
 ## Bezpieczeństwo
 
-- Logowanie Google, allowlista jednego adresu: `sotuldrop@gmail.com`.
+- Logowanie Google (OAuth z PKCE i `state`), allowlista jednego adresu: `sotuldrop@gmail.com`
+  (potwierdzony e-mail, `iss`, `aud`, `exp` ID tokenu). Sesja: podpisane HMAC ciasteczko
+  `broski_session` (HttpOnly, SameSite=Lax, Secure na HTTPS, 30 dni).
+- `src/proxy.ts` wymaga sesji dla wszystkiego poza logowaniem, healthcheckiem i plikami PWA;
+  API i strony serwerowe sprawdzają sesję ponownie (obrona w głąb). Żądania zmieniające stan
+  z obcego `Origin` → 403.
+- `AUTH_MODE=dev` (logowanie bez Google) tylko lokalnie i w testach; zabronione z `HERMES_MODE=real`.
 - Token Hermesa, klucze STT/LLM/Composio tylko w zmiennych środowiskowych serwera.
 - Tokeny OAuth konektorów nigdy w przeglądarce (zarządza nimi Composio / Hermes).
 - Logger z redakcją: parametry `token`, `secret`, `password`, `authorization`, query `?token=`.

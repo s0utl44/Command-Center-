@@ -1,4 +1,5 @@
 import type { FileCounter, HermesGateway } from "@/core/execution";
+import type { ConnectionStatusProvider } from "@/core/connection-status";
 import type { SpeechToText } from "@/core/stt";
 import { SEED_PROCESSES } from "@/core/processes";
 import type { AppConfig } from "./config";
@@ -7,6 +8,7 @@ import { ProcessRepository } from "./db/processes";
 import { TaskRepository } from "./db/tasks";
 import { MockWorld } from "./mock/world";
 import { createMockStt } from "./stt/mock";
+import { uncheckedConnectionStatus } from "./connections/unchecked";
 import { TaskService } from "./tasks/service";
 
 export interface Runtime {
@@ -17,6 +19,7 @@ export interface Runtime {
   hermes: HermesGateway;
   files: FileCounter;
   stt: SpeechToText;
+  connections: ConnectionStatusProvider;
 }
 
 /** Składa zależności wspólne dla `web` i `worker`. */
@@ -42,5 +45,6 @@ export function createRuntime(config: AppConfig): Runtime {
     hermes: world.hermes,
     files: world.drive,
     stt: createMockStt(config.mockSttText),
+    connections: uncheckedConnectionStatus,
   };
 }

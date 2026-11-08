@@ -12,7 +12,14 @@ const env = {
   MOCK_HERMES_DURATION_MS: "2500",
   WORKER_POLL_MS: "300",
   WORKER_HEALTH_PORT: String(WORKER_PORT),
+  // Logowanie testowe (bez Google) — dozwolone tylko przy HERMES_MODE=mock.
+  AUTH_MODE: "dev",
+  SESSION_SECRET: "e2e-only-secret-not-for-production-0123456789",
+  ALLOWED_EMAIL: "sotuldrop@gmail.com",
+  APP_URL: `http://127.0.0.1:${PORT}`,
 };
+
+export const AUTH_STATE = "test-results/.auth/state.json";
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -28,7 +35,10 @@ export default defineConfig({
     permissions: ["microphone"],
     launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] },
   },
-  projects: [{ name: "mobile-chromium", use: { ...devices["Pixel 7"] } }],
+  projects: [
+    { name: "setup", testMatch: /auth\.setup\.ts/ },
+    { name: "mobile-chromium", dependencies: ["setup"], use: { ...devices["Pixel 7"], storageState: AUTH_STATE } },
+  ],
   webServer: [
     {
       command: "rm -rf data/e2e && node --import tsx src/worker/main.ts",
