@@ -63,3 +63,8 @@ Hermes działa w kontenerze, endpoint tylko na loopbacku. `web`/`worker` muszą 
 ## D-014 Proces WRE korzysta z istniejącego skilla — przyjęta
 Na serwerze jest `real-estate-photo-workflow`. Instrukcja wykonania procesu wskazuje ten skill
 i przekazuje parametry (alias `wre`, folder, instrukcja obróbki), zamiast opisywać obróbkę od zera.
+
+## D-015 Rozpoznanie typu oferty z prefiksu folderu — przyjęta
+`WN` → wynajem, `WS` → sprzedaż, wyprowadzane z nazwy folderu. Gdy folder nie ma prefiksu,
+system pyta tylko o typ oferty. ❓ Struktura folderów na Drive (`obrobione` obok `fotki pozysk`
+czy wewnątrz folderu oferty) do potwierdzenia z treścią skilla `real-estate-photo-workflow`.

@@ -14,7 +14,7 @@ po przeładowaniu strony i po restarcie workera.
 | # | Etap | Kryterium ukończenia | Status |
 |---|---|---|---|
 | 0 | Dokumenty i szkielet | docs, `CLAUDE.md`, Next.js + TS strict, ESLint, Vitest, Playwright, CI, 4 ekrany-zaślepki | ✅ |
-| 1 | Rdzeń domeny | schemat procesu (zod), maszyna stanów, polityka zgód, router reguł, SQLite + migracje, seed procesu WRE; testy jednostkowe | ⏳ |
+| 1 | Rdzeń domeny | schemat procesu (zod), maszyna stanów, polityka zgód, router reguł, SQLite + migracje, seed procesu WRE; testy jednostkowe | ✅ |
 | 2 | Worker + mock Hermesa | kolejka z dzierżawą, idempotency, wznowienie po zabiciu workera, `needs_attention` przy niejasnym stanie, weryfikacja N/N na mocku | ⏳ |
 | 3 | Ekran „Mów” | MediaRecorder, mock STT, wpisywanie tekstu, pytanie o parametr, status przez SSE, stan po reloadzie (Playwright z fake mikrofonem) | ⏳ |
 | 4 | PWA + „Dzisiaj” | manifest, service worker, instalowalność, lista zadań w 5 grupach | ⏳ |
