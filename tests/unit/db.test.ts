@@ -72,7 +72,7 @@ describe("zadania", () => {
     const r = service.submitUtterance({ utterance: "Obrób zdjęcia", idempotencyKey: "b" });
     if (r.kind !== "task") throw new Error("brak zadania");
     expect(r.task.status).toBe("needs_input");
-    expect(r.task.missing.map((m) => m.name)).toEqual(["folder", "listing_type"]);
+    expect(r.task.missing.map((m) => m.name)).toEqual(["folder"]);
 
     const after = service.provideParams(r.task.id, { folder: "WN Wola 12" });
     expect(after.status).toBe("queued");
@@ -80,13 +80,19 @@ describe("zadania", () => {
     expect(tasks.events(r.task.id).map((e) => e.type)).toEqual(["created", "params-provided"]);
   });
 
-  it("odrzuca nieprawidłową wartość wyboru i pyta dalej", () => {
-    const { service } = setup();
+  it("odrzuca wartość spoza listy wyboru i pyta dalej", () => {
+    const { service, processes, tasks } = setup();
+    const base = processes.getActive("wre-photo-edit")!.definition;
+    processes.addVersion(
+      { ...base, params: base.params.map((p) => (p.name === "listing_type" ? { ...p, required: true, default: undefined, options: ["wynajem", "sprzedaż"] } : p)) },
+      "Test: typ oferty wymagany",
+    );
     const r = service.submitUtterance({ utterance: "Obrób zdjęcia z folderu Saska Kępa", idempotencyKey: "c" });
     if (r.kind !== "task") throw new Error("brak zadania");
-    const after = service.provideParams(r.task.id, { listing_type: "dzierżawa" });
-    expect(after.status).toBe("needs_input");
+    expect(r.task.status).toBe("needs_input");
+    expect(service.provideParams(r.task.id, { listing_type: "dzierżawa" }).status).toBe("needs_input");
     expect(service.provideParams(r.task.id, { listing_type: "sprzedaż" }).status).toBe("queued");
+    expect(tasks.get(r.task.id)!.params.listing_type).toBe("sprzedaż");
   });
 
   it("nie dopuszcza równoległej, sprzecznej zmiany stanu", () => {

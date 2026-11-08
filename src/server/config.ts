@@ -3,6 +3,8 @@ import type { AdapterMode } from "@/core/execution";
 export interface AppConfig {
   databasePath: string;
   hermesMode: AdapterMode;
+  sttMode: AdapterMode;
+  mockSttText: string;
   hermesWsUrl: string;
   workerPollMs: number;
   mockHermesDurationMs: number;
@@ -26,6 +28,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   return {
     databasePath: env.DATABASE_PATH || "./data/app.db",
     hermesMode: mode(env.HERMES_MODE, "HERMES_MODE"),
+    sttMode: mode(env.STT_MODE, "STT_MODE"),
+    mockSttText: env.MOCK_STT_TEXT || "Obrób zdjęcia z Zyndrama 20 52",
     hermesWsUrl: env.HERMES_WS_URL || "ws://127.0.0.1:9119/api/ws",
     workerPollMs: positiveInt(env.WORKER_POLL_MS, 1500, "WORKER_POLL_MS"),
     mockHermesDurationMs: positiveInt(env.MOCK_HERMES_DURATION_MS, 8000, "MOCK_HERMES_DURATION_MS"),

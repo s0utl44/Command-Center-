@@ -45,3 +45,42 @@ h1 { font-size: 1.5rem; margin: 0 0 12px; }
 }
 .bottom-nav a.active { color: var(--text); }
 .bottom-nav a span:first-child { font-size: 1.25rem; }
+
+/* --- Ekran Mów (etap 3) --- */
+.speak { justify-content: flex-start; min-height: auto; gap: 16px; }
+.speak > .mic { margin-top: 12px; }
+.mic.recording { background: #e5484d; box-shadow: 0 0 0 0 rgb(229 72 77 / 60%); animation: pulse 1.4s infinite; font-size: 56px; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgb(229 72 77 / 55%); } 70% { box-shadow: 0 0 0 28px rgb(229 72 77 / 0%); } 100% { box-shadow: 0 0 0 0 rgb(229 72 77 / 0%); } }
+button { font: inherit; color: var(--text); background: var(--surface); border: 1px solid #2b303b; border-radius: 12px; padding: 12px 16px; min-height: 44px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button.link { background: none; border: none; color: var(--muted); padding: 4px 0; min-height: auto; text-decoration: underline; }
+button:disabled { opacity: 0.5; }
+textarea, input { width: 100%; font: inherit; color: var(--text); background: var(--surface); border: 1px solid #2b303b; border-radius: 12px; padding: 12px 14px; resize: vertical; }
+.command, .quick { width: 100%; display: grid; gap: 10px; }
+.quick { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.actions > button { flex: 1 1 auto; }
+.error { color: #ff8a8a; margin: 0; }
+.offline { color: #f5c26b; margin: 0; }
+.sim-banner { width: 100%; margin: 0; padding: 8px 12px; border-radius: 10px; background: #3a2e12; color: #f5c26b; font-size: 0.85rem; }
+.badge-sim { display: inline-block; margin: 0; padding: 2px 8px; border-radius: 6px; background: #3a2e12; color: #f5c26b; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em; }
+.task-card { width: 100%; background: var(--surface); border: 1px solid #2b303b; border-radius: 16px; padding: 16px; display: grid; gap: 12px; }
+.task-card header { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.task-card .process { font-weight: 600; }
+.task-card .status { color: var(--muted); font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.status-succeeded .status { color: #5bd68a; }
+.status-failed .status, .status-needs_attention .status { color: #ff8a8a; }
+.status-needs_input .status, .status-awaiting_approval .status { color: #f5c26b; }
+.params { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+.params div { display: contents; }
+.params dt { color: var(--muted); }
+.params dd { margin: 0; overflow-wrap: anywhere; }
+.result p { margin: 4px 0; }
+.result a { color: var(--accent); }
+.question { color: #f5c26b; }
+.missing { display: grid; gap: 10px; }
+.missing label { display: grid; gap: 8px; }
+.options { display: flex; gap: 8px; flex-wrap: wrap; }
+.approval ul { margin: 4px 0 8px; padding-left: 20px; }
+.spinner { width: 12px; height: 12px; border: 2px solid var(--muted); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

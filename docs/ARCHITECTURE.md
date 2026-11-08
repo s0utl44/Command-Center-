@@ -148,6 +148,20 @@ Poziom ryzyka akcji wynika z definicji procesu i kodu polityki, nie z decyzji mo
 Zgoda zapisuje **hash dokładnej treści** akcji (np. adresat + temat + treść maila). Zmiana treści
 unieważnia zgodę. Profile wykonania: `read-only`, `draft-only`, `write-with-approval`.
 
+## API (etap 3)
+
+| Metoda | Ścieżka | Do czego |
+|---|---|---|
+| POST | `/api/transcribe` | nagranie (multipart `audio`) → `{ text, simulated }`; audio nie jest zapisywane |
+| POST | `/api/commands` | `{ utterance, idempotencyKey }` → zadanie / `no-match` / `ambiguous` |
+| GET | `/api/tasks`, `/api/tasks/:id` | migawka zadań / zadanie z osią zdarzeń |
+| POST | `/api/tasks/:id/params` · `approve` · `cancel` · `retry` | decyzje użytkownika (`retry`: `continue` / `fresh`) |
+| GET | `/api/events` | SSE: migawka przy każdej zmianie w bazie (odpytywanie co 1 s) |
+| GET | `/api/health` | healthcheck `web` (bez bazy) |
+
+⚠️ Do etapu 5 API **nie ma logowania** — nie wystawiać aplikacji publicznie przed etapem 5.
+Worker ma opcjonalny healthcheck `WORKER_HEALTH_PORT` (tylko `127.0.0.1`).
+
 ## Status w UI
 
 - SSE z `web` do przeglądarki dla zadań w toku; po reloadzie stan czytany z bazy.

@@ -44,9 +44,10 @@ export const wrePhotoEditV1: ProcessDefinitionInput = {
     {
       name: "listing_type",
       label: "Typ oferty",
-      required: true,
+      // Nie pytamy — dla obróbki to bez znaczenia (decyzja Dominika). Prefiks WN/WS, jeśli jest, trafia do Hermesa.
+      required: false,
+      default: "nie podano",
       question: "Czy to wynajem (WN), czy sprzedaż (WS)?",
-      options: ["wynajem", "sprzedaż"],
       derive: {
         from: "folder",
         rules: [
@@ -73,7 +74,7 @@ export const wrePhotoEditV1: ProcessDefinitionInput = {
       "Folder nieruchomości: „{{folder}}” — dopasuj wśród bezpośrednich podfolderów „fotki - pozysk” (uwzględnij warianty z polskimi znakami i bez).",
       "Obrób wszystkie zdjęcia z tego folderu (cały folder, nie wybrane pliki).",
       "Gotowe zdjęcia zapisz w podfolderze „obrobione” wewnątrz folderu nieruchomości.",
-      "Typ oferty: {{listing_type}}. Dla sprzedaży zmień w standardowym prompcie tylko „wynajmu” na „sprzedaży”.",
+      "Typ oferty: {{listing_type}}. Tylko gdy to sprzedaż, zmień w standardowym prompcie „wynajmu” na „sprzedaży”; w innym razie prompt bez zmian.",
       "Prompt obróbki: standardowy z references/photo-prompt.md, bez zmian. Dodatkowa instrukcja użytkownika: {{extra_instruction}}.",
       "Jeśli folder nie istnieje albo pasuje więcej niż jeden, zatrzymaj się i zapytaj — nie zgaduj.",
       "Nie usuwaj i nie nadpisuj oryginałów.",

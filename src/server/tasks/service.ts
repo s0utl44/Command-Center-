@@ -6,6 +6,14 @@ import type { TaskStatus } from "@/core/task";
 import type { ProcessRepository } from "../db/processes";
 import type { Task, TaskRepository } from "../db/tasks";
 
+/** Akcja niedozwolona w obecnym stanie zadania (np. podwójne kliknięcie). */
+export class TaskStateError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TaskStateError";
+  }
+}
+
 export type SubmitResult =
   | { kind: "task"; task: Task; duplicate: boolean }
   | { kind: "ambiguous"; candidates: { key: string; name: string }[] }
@@ -59,7 +67,7 @@ export class TaskService {
   /** Uzupełnienie brakujących parametrów odpowiedziami użytkownika. */
   provideParams(taskId: string, values: Record<string, string>): Task {
     const task = this.require(taskId);
-    if (task.status !== "needs_input") throw new Error("Zadanie nie czeka na dane");
+    if (task.status !== "needs_input") throw new TaskStateError("Zadanie nie czeka na dane");
     const definition = this.definitionOf(task);
     const known = new Set(definition.params.map((p) => p.name));
     const cleaned = Object.fromEntries(
@@ -92,7 +100,7 @@ export class TaskService {
    */
   retry(taskId: string, mode: "continue" | "fresh" = "continue"): Task {
     const task = this.require(taskId);
-    if (task.status !== "needs_attention") throw new Error("Ponowić można tylko zadanie wymagające uwagi");
+    if (task.status !== "needs_attention") throw new TaskStateError("Ponowić można tylko zadanie wymagające uwagi");
     const effective = mode === "continue" && task.hermesSessionId ? "continue" : "fresh";
     if (effective === "continue") this.tasks.clearPromptSubmission(task.id);
     else this.tasks.clearExecution(task.id);

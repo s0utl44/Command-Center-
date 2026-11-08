@@ -13,6 +13,7 @@ Zanim zaczniesz pracę, przeczytaj:
 
 ```bash
 npm run dev          # Next.js dev
+npm run worker       # worker wykonujący zadania (osobny proces; potrzebny do działania zadań)
 npm run lint         # ESLint
 npm run typecheck    # tsc --noEmit
 npm test             # Vitest

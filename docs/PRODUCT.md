@@ -39,7 +39,7 @@ Chat i pełna historia są dostępne jako szczegóły zadania, ale nie są ekran
 
 - Konto: Google Drive `d.lys@wrenieruchomosci.pl`, alias `wre`.
 - Struktura: `fotki - pozysk / <folder nieruchomości> / obrobione`.
-- Prefiksy folderów: `WN` = wynajem, `WS` = sprzedaż; bez prefiksu system pyta o typ oferty.
+- Prefiksy folderów: `WN` = wynajem, `WS` = sprzedaż — opcjonalne; system nie dopytuje o typ oferty.
 - Nazwa folderu może być fragmentem („z Zyndrama”) — dopasowuje go Hermes, a wynik pokazuje
   rzeczywistą nazwę i link do `obrobione`.
 - Obróbka realistyczna wg stałego promptu ze skilla: zachowany układ, meble i geometria.

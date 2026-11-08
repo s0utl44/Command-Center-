@@ -64,10 +64,10 @@ Hermes działa w kontenerze, endpoint tylko na loopbacku. `web`/`worker` muszą 
 Na serwerze jest `real-estate-photo-workflow`. Instrukcja wykonania procesu wskazuje ten skill
 i przekazuje parametry (alias `wre`, folder, instrukcja obróbki), zamiast opisywać obróbkę od zera.
 
-## D-015 Typ oferty z prefiksu folderu, w przeciwnym razie pytanie — przyjęta
-`WN` → wynajem, `WS` → sprzedaż, wyprowadzane z nazwy folderu. Istniejące foldery na Drive
-(np. „Zyndrama 20 52”) nie mają prefiksów — wtedy system pyta tylko „wynajem czy sprzedaż?”.
-Skill zmienia dla sprzedaży wyłącznie słowo „wynajmu” → „sprzedaży” w stałym prompcie.
+## D-015 Typ oferty nie jest wymagany — przyjęta
+Decyzja Dominika: przy obróbce zdjęć typ oferty nie ma znaczenia, a nazwy folderów (podawane
+w przybliżeniu) się nie powtarzają. System nie dopytuje o typ oferty. Prefiks `WN`/`WS`, jeśli
+padnie, jest przekazywany Hermesowi (skill zmienia wtedy tylko „wynajmu” → „sprzedaży”).
 Struktura potwierdzona skillem: `fotki - pozysk/<folder nieruchomości>/obrobione`.
 
 ## D-016 Odpytywanie stanu zamiast polegania na strumieniu zdarzeń — przyjęta
@@ -92,3 +92,15 @@ Użytkownik podaje często fragment nazwy („z Zyndrama”), a Hermes dopasowuj
 wymaga na końcu linii `WYNIK (JSON): {source_folder_name, source_folder_id, destination_folder_id,
 destination_url, source_count, verified_count}`. Weryfikator liczy pliki sam, po ID folderów z tej
 linii; liczby z raportu nie są dowodem. Link i rzeczywista nazwa folderu trafiają do wyniku w UI.
+
+## D-020 Transkrypcja do potwierdzenia przed wysłaniem — tymczasowa
+Po nagraniu tekst trafia do edytowalnego pola i jest wysyłany przyciskiem „Wykonaj”. Przy
+symulowanym STT to konieczne (tekst nie pochodzi z nagrania). Po podłączeniu prawdziwego STT
+(etap 7) rozważymy automatyczne wysłanie dla procesów bez ryzyka.
+
+## D-021 SSE odpytuje bazę — przyjęta
+`/api/events` co sekundę porównuje migawkę zadań z bazy i wysyła ją przy zmianie. Proste,
+odporne na restart `web` i `worker`; przy jednym użytkowniku koszt jest pomijalny. UI dodatkowo
+od razu stosuje odpowiedź na własną akcję (nowsza wersja zadania wygrywa), żeby nie pokazywać
+przez chwilę poprzedniego zadania.
+

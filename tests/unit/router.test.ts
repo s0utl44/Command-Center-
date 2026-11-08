@@ -33,20 +33,15 @@ describe("router regułowy — obróbka zdjęć WRE", () => {
   ])("folder podany nazwą lokalizacji: %s", (utterance, folder) => {
     const r = match(utterance);
     expect(r.params.folder).toBe(folder);
-    // Istniejące foldery nie mają prefiksu WN/WS — pytamy tylko o typ oferty.
-    expect(r.missing.map((m) => m.name)).toEqual(["listing_type"]);
+    // Bez prefiksu WN/WS nie dopytujemy — typ oferty nie jest potrzebny do obróbki.
+    expect(r.params.listing_type).toBe("nie podano");
+    expect(r.missing).toEqual([]);
   });
 
-  it("pyta o folder, gdy go brakuje", () => {
+  it("pyta wyłącznie o folder, gdy go brakuje", () => {
     const r = match("Obrób zdjęcia");
-    expect(r.missing.map((m) => m.name)).toEqual(["folder", "listing_type"]);
+    expect(r.missing.map((m) => m.name)).toEqual(["folder"]);
     expect(r.missing[0]?.question).toBe("Z którego folderu obrobić zdjęcia?");
-  });
-
-  it("pyta tylko o typ oferty, gdy folder nie ma prefiksu", () => {
-    const r = match("Obrób zdjęcia z folderu Saska Kępa");
-    expect(r.params.folder).toBe("Saska Kępa");
-    expect(r.missing).toEqual([{ name: "listing_type", question: "Czy to wynajem (WN), czy sprzedaż (WS)?", options: ["wynajem", "sprzedaż"] }]);
   });
 
   it("przyjmuje dodatkową instrukcję obróbki", () => {
