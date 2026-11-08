@@ -114,6 +114,25 @@ Zdarzenia: `message.delta`, `message.complete`, `tool.start`, `tool.end`,
   automatycznie `always` ani `session`; dozwolone są tylko `once` (po zgodzie użytkownika) i `deny`.
 - Zgody Hermesa dotyczą głównie niebezpiecznych komend — **nie** zastępują naszej polityki zgód.
 
+### Model kroków workera (etap 2)
+
+Worker co `WORKER_POLL_MS` przejmuje zadania (`queued`, oraz `running`/`verifying` bez ważnej
+dzierżawy), wykonuje **jeden krok** każdego i zwalnia dzierżawę. Kroki w stanie `running`:
+
+1. brak sesji → `session.create` i zapis `hermes_session_id` (błędy połączenia: do 5 prób, potem `needs_attention`);
+2. brak `prompt_submitted_at` → zapis znacznika „mogło zostać wysłane” → **jedno** `prompt.submit`;
+3. w pozostałych przypadkach → odczyt stanu (`session.status` + `session.history`, szukamy znacznika
+   `[zlecenie:<taskId>]`) i decyzja: dalej czekamy / weryfikacja / `failed` / `needs_attention`.
+
+Stan jest odczytywany odpytywaniem, nie ze strumienia zdarzeń — strumień może być później użyty
+do szybszego odświeżania UI, ale nie jest źródłem prawdy. Zlecenie zawiera na końcu linię
+`Parametry zlecenia (JSON): …` z zadaniem, procesem, kontem i parametrami.
+
+Ograniczenie etapu 2: `clarify.request` i `approval.request` od Hermesa kończą się `needs_attention`
+z treścią pytania. Odpowiadanie z aplikacji (`clarify.respond` / `approval.respond`) — etap 6.
+
+Ponowienie zadania `needs_attention` jest **wyłącznie** decyzją użytkownika i tworzy nową sesję.
+
 ## Weryfikacja
 
 Krok weryfikacji jest częścią definicji procesu i wykonywany jest osobnym odczytem po wykonaniu,

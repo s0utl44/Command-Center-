@@ -182,6 +182,73 @@ export class TaskRepository {
     })();
   }
 
+  /**
+   * Przejmuje do `limit` zadań wymagających pracy workera: w kolejce albo w toku/weryfikacji
+   * bez ważnej dzierżawy (np. po awarii innego workera). Atomowe — dwa workery nie wezmą tego samego.
+   */
+  claimNext(owner: string, leaseMs: number, limit = 5): Task[] {
+    return this.db.transaction(() => {
+      const now = this.now();
+      const rows = this.db
+        .prepare(
+          `SELECT id FROM tasks
+           WHERE status IN ('queued', 'running', 'verifying')
+             AND (lease_until IS NULL OR lease_until < ?)
+           ORDER BY created_at, rowid LIMIT ?`,
+        )
+        .all(now.toISOString(), limit) as { id: string }[];
+      const until = new Date(now.getTime() + leaseMs).toISOString();
+      const claim = this.db.prepare(
+        "UPDATE tasks SET lease_owner = ?, lease_until = ? WHERE id = ? AND (lease_until IS NULL OR lease_until < ?)",
+      );
+      return rows.filter((r) => claim.run(owner, until, r.id, now.toISOString()).changes === 1).map((r) => this.get(r.id) as Task);
+    })();
+  }
+
+  releaseLease(id: string, owner: string): void {
+    this.db.prepare("UPDATE tasks SET lease_owner = NULL, lease_until = NULL WHERE id = ? AND lease_owner = ?").run(id, owner);
+  }
+
+  incrementAttempts(id: string): void {
+    this.db.prepare("UPDATE tasks SET attempts = attempts + 1 WHERE id = ?").run(id);
+  }
+
+  /** Zapisuje sesję Hermesa ZANIM wyślemy zlecenie — po awarii wiemy, gdzie szukać. */
+  setHermesSession(id: string, sessionId: string): void {
+    this.db.transaction(() => {
+      this.db.prepare("UPDATE tasks SET hermes_session_id = ?, updated_at = ? WHERE id = ?").run(sessionId, this.now().toISOString(), id);
+      this.addEvent(id, "session-created", null, null, { sessionId });
+    })();
+  }
+
+  /**
+   * Oznacza, że zlecenie MOGŁO zostać wysłane. Zapisywane przed `prompt.submit`, więc po awarii
+   * nigdy nie wyślemy go drugi raz — tylko odczytamy stan sesji.
+   */
+  markPromptSubmitting(id: string): void {
+    this.db.transaction(() => {
+      this.db.prepare("UPDATE tasks SET prompt_submitted_at = ?, updated_at = ? WHERE id = ?").run(this.now().toISOString(), this.now().toISOString(), id);
+      this.addEvent(id, "prompt-submitting", null, null);
+    })();
+  }
+
+  /** Czyści powiązanie z Hermesem — tylko przy świadomym ponowieniu przez użytkownika. */
+  clearExecution(id: string): void {
+    this.db.prepare("UPDATE tasks SET hermes_session_id = NULL, prompt_submitted_at = NULL, updated_at = ? WHERE id = ?").run(this.now().toISOString(), id);
+  }
+
+  lastEventId(taskId: string, type: string): number {
+    const row = this.db.prepare("SELECT MAX(id) AS id FROM task_events WHERE task_id = ? AND type = ?").get(taskId, type) as { id: number | null };
+    return row.id ?? 0;
+  }
+
+  countEvents(taskId: string, type: string, sinceEventId = 0): number {
+    const row = this.db
+      .prepare("SELECT COUNT(*) AS c FROM task_events WHERE task_id = ? AND type = ? AND id > ?")
+      .get(taskId, type, sinceEventId) as { c: number };
+    return row.c;
+  }
+
   addEvent(taskId: string, type: string, from: TaskStatus | null, to: TaskStatus | null, data?: unknown): void {
     this.db
       .prepare("INSERT INTO task_events (task_id, at, type, from_status, to_status, data_json) VALUES (?, ?, ?, ?, ?, ?)")

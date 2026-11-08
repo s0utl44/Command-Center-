@@ -84,6 +84,17 @@ export class TaskService {
     return this.tasks.transition(task.id, "awaiting_approval", "queued", "approved", {}, { reasons: task.approvalReasons });
   }
 
+  /**
+   * Świadome ponowienie przez użytkownika zadania wymagającego uwagi. Tworzy NOWĄ sesję Hermesa.
+   * UI musi ostrzec, że poprzednie zlecenie mogło zostać częściowo wykonane.
+   */
+  retry(taskId: string): Task {
+    const task = this.require(taskId);
+    if (task.status !== "needs_attention") throw new Error("Ponowić można tylko zadanie wymagające uwagi");
+    this.tasks.clearExecution(task.id);
+    return this.tasks.transition(task.id, "needs_attention", "queued", "retried", { result: null }, { previousSession: task.hermesSessionId });
+  }
+
   cancel(taskId: string): Task {
     const task = this.require(taskId);
     return this.tasks.transition(task.id, task.status, "cancelled", "cancelled");

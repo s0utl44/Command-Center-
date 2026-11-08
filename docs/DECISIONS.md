@@ -68,3 +68,12 @@ i przekazuje parametry (alias `wre`, folder, instrukcja obróbki), zamiast opisy
 `WN` → wynajem, `WS` → sprzedaż, wyprowadzane z nazwy folderu. Gdy folder nie ma prefiksu,
 system pyta tylko o typ oferty. ❓ Struktura folderów na Drive (`obrobione` obok `fotki pozysk`
 czy wewnątrz folderu oferty) do potwierdzenia z treścią skilla `real-estate-photo-workflow`.
+
+## D-016 Odpytywanie stanu zamiast polegania na strumieniu zdarzeń — przyjęta
+Hermes nie ma potwierdzonego replayu zdarzeń, więc worker ustala stan krokami: `session.status` +
+`session.history` ze znacznikiem `[zlecenie:<taskId>]`. Każdy krok jest krótki i bezpieczny przy
+restarcie. Strumień zdarzeń może później przyspieszyć UI, ale nie decyduje o stanie zadania.
+
+## D-017 Worker uruchamiany przez `node --import tsx` — tymczasowa
+Jeden proces (poprawna obsługa sygnałów pod systemd), bez osobnego kroku budowania. Do rewizji
+przy wdrożeniu (ewentualnie bundling esbuild).
