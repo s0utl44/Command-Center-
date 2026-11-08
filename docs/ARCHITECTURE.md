@@ -131,12 +131,15 @@ do szybszego odświeżania UI, ale nie jest źródłem prawdy. Zlecenie zawiera 
 Ograniczenie etapu 2: `clarify.request` i `approval.request` od Hermesa kończą się `needs_attention`
 z treścią pytania. Odpowiadanie z aplikacji (`clarify.respond` / `approval.respond`) — etap 6.
 
-Ponowienie zadania `needs_attention` jest **wyłącznie** decyzją użytkownika i tworzy nową sesję.
+Ponowienie zadania `needs_attention` jest **wyłącznie** decyzją użytkownika:
+„Dokończ” = nowe zlecenie-kontynuacja w tej samej sesji (skill wznawia z manifestu), „Od nowa” = nowa sesja (D-018).
+Każda próba ma własny znacznik `[zlecenie:<taskId>#<próba>]`.
 
 ## Weryfikacja
 
 Krok weryfikacji jest częścią definicji procesu i wykonywany jest osobnym odczytem po wykonaniu,
-a nie na podstawie raportu agenta. Przykłady: policzenie plików w `obrobione/<folder>` vs źródło;
+a nie na podstawie raportu agenta. Raport Hermesa (linia `WYNIK (JSON)`) wskazuje jedynie, które
+foldery policzyć (ID, rzeczywista nazwa) i podaje link (D-019). Przykłady: policzenie plików w `obrobione/<folder>` vs źródło;
 ponowny odczyt notatki z HubSpot. Wynik nieweryfikowalny ≠ sukces → `needs_attention`.
 
 ## Zgody (polityka w backendzie)

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { parsePromptMeta, type FileCounter, type HermesGateway, type RunState } from "@/core/execution";
+import { CONTINUATION_TEXT, parsePromptMeta, RESULT_LINE_PREFIX, type FileCounter, type HermesGateway, type RunState } from "@/core/execution";
+import { WRE_PHOTOS_ROOT } from "@/core/processes/wre-photo-edit";
 import type { Db } from "../db";
 
 /**
@@ -9,6 +10,7 @@ import type { Db } from "../db";
  * Scenariusze wybierane słowem w nazwie folderu (do ręcznych testów):
  *   BLAD → błąd wykonania, CZESC → brakuje jednego pliku, PYTANIE → Hermes dopytuje,
  *   ZGUB → Hermes gubi sesję. W pozostałych przypadkach — sukces.
+ * Kontynuacja („Dokończ”) w tej samej sesji zawsze kończy brakujące pliki.
  */
 
 export type MockOutcome = "success" | "partial" | "fail" | "clarify" | "lost";
@@ -92,9 +94,9 @@ export class MockWorld {
       const at = this.now();
       this.db.prepare("INSERT INTO mock_hermes_submits (session_id, at) VALUES (?, ?)").run(sessionId, at.toISOString());
       const params = parsePromptMeta(prompt)?.params ?? {};
-      const outcome = this.outcomeFor(params);
+      const outcome = prompt.includes(CONTINUATION_TEXT) ? "success" : this.outcomeFor(params);
       const info = this.db
-        .prepare("UPDATE mock_hermes_sessions SET prompt = ?, submitted_at = ?, complete_at = ?, outcome = ? WHERE session_id = ?")
+        .prepare("UPDATE mock_hermes_sessions SET prompt = ?, submitted_at = ?, complete_at = ?, outcome = ?, applied = 0 WHERE session_id = ?")
         .run(prompt, at.toISOString(), new Date(at.getTime() + this.durationMs).toISOString(), outcome, sessionId);
       if (info.changes !== 1) throw new Error("SYMULACJA: nieznana sesja");
     },
@@ -103,12 +105,13 @@ export class MockWorld {
 
   readonly drive: FileCounter = {
     mode: "mock",
-    countFiles: async (alias, path) => {
-      const row = this.db.prepare("SELECT count FROM mock_drive_folders WHERE alias = ? AND path = ?").get(alias, path) as
+    countFiles: async (alias, folder) => {
+      const row = this.db.prepare("SELECT count FROM mock_drive_folders WHERE alias = ? AND path = ?").get(alias, folder.path) as
         | { count: number }
         | undefined;
       if (row) return row.count;
-      if (alias === "wre" && path.startsWith("fotki pozysk/")) return mockSourceCount(path.slice("fotki pozysk/".length));
+      const rest = folder.path.startsWith(`${WRE_PHOTOS_ROOT}/`) ? folder.path.slice(WRE_PHOTOS_ROOT.length + 1) : null;
+      if (alias === "wre" && rest && !rest.includes("/")) return mockSourceCount(rest);
       return null;
     },
   };
@@ -129,10 +132,21 @@ export class MockWorld {
         if (!row.applied) {
           this.db
             .prepare("INSERT INTO mock_drive_folders (alias, path, count) VALUES (?, ?, ?) ON CONFLICT(alias, path) DO UPDATE SET count = excluded.count")
-            .run(meta?.account ?? "wre", `obrobione/${folder}`, written);
+            .run(meta?.account ?? "wre", `${WRE_PHOTOS_ROOT}/${folder}/obrobione`, written);
           this.db.prepare("UPDATE mock_hermes_sessions SET applied = 1 WHERE session_id = ?").run(sessionId);
         }
-        return { kind: "completed", report: `SYMULACJA: obrobiono ${written} z ${source} zdjęć.` };
+        const result = {
+          source_folder_name: folder,
+          source_folder_id: `mock-src-${sessionId}`,
+          destination_folder_id: `mock-dst-${sessionId}`,
+          destination_url: `https://example.invalid/symulacja/${encodeURIComponent(folder)}/obrobione`,
+          source_count: source,
+          verified_count: written,
+        };
+        return {
+          kind: "completed",
+          report: `SYMULACJA: obrobiono ${written} z ${source} zdjęć.\n${RESULT_LINE_PREFIX} ${JSON.stringify(result)}`,
+        };
       }
       case "fail":
         return { kind: "failed", error: "SYMULACJA: błąd podczas obróbki zdjęć." };

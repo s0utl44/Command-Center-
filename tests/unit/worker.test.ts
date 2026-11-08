@@ -59,6 +59,8 @@ describe("worker — ścieżka szczęśliwa (SYMULACJA)", () => {
     expect(result(done.result).simulated).toBe(true);
     expect(result(done.result).verification).toEqual({ expected: n, actual: n, passed: true });
     expect(result(done.result).summary).toBe(`Obrobiono ${n}/${n} zdjęć z folderu WS Mokotów.`);
+    expect(result(done.result).resolvedFolder).toBe("WS Mokotów");
+    expect(result(done.result).link).toMatch(/^https:\/\/example\.invalid\/symulacja\//);
     expect(s.world.submitCount()).toBe(1);
     expect(s.tasks.events(task.id).map((e) => e.type)).toEqual([
       "created",
@@ -119,7 +121,7 @@ describe("worker — awarie i restart", () => {
     s.tasks.claimNext("dead-worker", 60_000);
     s.tasks.transition(task.id, "queued", "running", "claimed");
     const { sessionId } = await s.world.hermes.createSession();
-    s.tasks.setHermesSession(task.id, sessionId);
+    s.tasks.setHermesSession(task.id, sessionId, 1);
 
     const worker = s.makeWorker("w2");
     expect(await worker.tick()).toBe(0); // dzierżawa martwego workera jeszcze ważna
@@ -210,7 +212,37 @@ describe("worker — awarie i restart", () => {
     expect(s.tasks.claimNext("b", 60_000)).toHaveLength(0);
   });
 
-  it("świadome ponowienie tworzy nową sesję i kończy zadanie", async () => {
+  it("„Dokończ” po niepełnym wyniku: nowe zlecenie w tej samej sesji, potem N/N", async () => {
+    const s = setup({ outcome: "partial" });
+    const task = s.submit();
+    const worker = s.makeWorker();
+    const attention = await s.runToEnd(worker, task.id);
+    expect(attention.status).toBe("needs_attention");
+    const sessionId = attention.hermesSessionId!;
+
+    const retried = s.service.retry(task.id, "continue");
+    expect(retried.status).toBe("queued");
+    expect(retried.hermesSessionId).toBe(sessionId);
+
+    const done = await s.runToEnd(worker, task.id);
+    expect(done.status).toBe("succeeded");
+    expect(done.hermesSessionId).toBe(sessionId);
+    expect(done.attempts).toBe(2);
+    expect(s.world.submitCount(sessionId)).toBe(2); // jedno zlecenie na każdą świadomą próbę
+    expect(s.tasks.events(task.id).find((e) => e.type === "retried")?.data).toMatchObject({ mode: "continue" });
+  });
+
+  it("„Dokończ” bez sesji zamienia się w ponowienie od nowa", async () => {
+    const s = setup();
+    const task = s.submit();
+    s.tasks.transition(task.id, "queued", "running", "claimed");
+    s.tasks.transition(task.id, "running", "needs_attention", "needs-attention");
+    const retried = s.service.retry(task.id, "continue");
+    expect(s.tasks.events(task.id).at(-1)?.data).toMatchObject({ mode: "fresh" });
+    expect(retried.hermesSessionId).toBeNull();
+  });
+
+  it("świadome ponowienie od nowa tworzy nową sesję i kończy zadanie", async () => {
     let outcome: MockOutcome = "lost";
     const s = setup();
     const world = new MockWorld(s.db, { now: s.now, durationMs: DURATION, outcomeFor: () => outcome });
@@ -220,7 +252,7 @@ describe("worker — awarie i restart", () => {
     expect(attention.status).toBe("needs_attention");
 
     outcome = "success";
-    const retried = s.service.retry(task.id);
+    const retried = s.service.retry(task.id, "fresh");
     expect(retried.status).toBe("queued");
     expect(retried.hermesSessionId).toBeNull();
     const done = await s.runToEnd(worker, task.id);

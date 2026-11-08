@@ -15,6 +15,8 @@ export interface Task {
   approvalReasons: ApprovalReason[];
   result: unknown;
   hermesSessionId: string | null;
+  /** Numer próby, w której utworzono sesję — późniejsza próba w tej samej sesji to kontynuacja. */
+  hermesSessionAttempt: number | null;
   promptSubmittedAt: string | null;
   attempts: number;
   createdAt: string;
@@ -42,6 +44,7 @@ interface TaskRow {
   approval_reasons_json: string;
   result_json: string | null;
   hermes_session_id: string | null;
+  hermes_session_attempt: number | null;
   prompt_submitted_at: string | null;
   attempts: number;
   created_at: string;
@@ -70,6 +73,7 @@ function toTask(row: TaskRow): Task {
     approvalReasons: JSON.parse(row.approval_reasons_json) as ApprovalReason[],
     result: row.result_json === null ? null : (JSON.parse(row.result_json) as unknown),
     hermesSessionId: row.hermes_session_id,
+    hermesSessionAttempt: row.hermes_session_attempt,
     promptSubmittedAt: row.prompt_submitted_at,
     attempts: row.attempts,
     createdAt: row.created_at,
@@ -214,10 +218,12 @@ export class TaskRepository {
   }
 
   /** Zapisuje sesję Hermesa ZANIM wyślemy zlecenie — po awarii wiemy, gdzie szukać. */
-  setHermesSession(id: string, sessionId: string): void {
+  setHermesSession(id: string, sessionId: string, attempt: number): void {
     this.db.transaction(() => {
-      this.db.prepare("UPDATE tasks SET hermes_session_id = ?, updated_at = ? WHERE id = ?").run(sessionId, this.now().toISOString(), id);
-      this.addEvent(id, "session-created", null, null, { sessionId });
+      this.db
+        .prepare("UPDATE tasks SET hermes_session_id = ?, hermes_session_attempt = ?, updated_at = ? WHERE id = ?")
+        .run(sessionId, attempt, this.now().toISOString(), id);
+      this.addEvent(id, "session-created", null, null, { sessionId, attempt });
     })();
   }
 
@@ -232,9 +238,16 @@ export class TaskRepository {
     })();
   }
 
-  /** Czyści powiązanie z Hermesem — tylko przy świadomym ponowieniu przez użytkownika. */
+  /** Czyści powiązanie z Hermesem — tylko przy świadomym ponowieniu „od nowa” przez użytkownika. */
   clearExecution(id: string): void {
-    this.db.prepare("UPDATE tasks SET hermes_session_id = NULL, prompt_submitted_at = NULL, updated_at = ? WHERE id = ?").run(this.now().toISOString(), id);
+    this.db
+      .prepare("UPDATE tasks SET hermes_session_id = NULL, hermes_session_attempt = NULL, prompt_submitted_at = NULL, updated_at = ? WHERE id = ?")
+      .run(this.now().toISOString(), id);
+  }
+
+  /** Zachowuje sesję, pozwala wysłać nowe zlecenie (kontynuację) — tylko po świadomym „Dokończ”. */
+  clearPromptSubmission(id: string): void {
+    this.db.prepare("UPDATE tasks SET prompt_submitted_at = NULL, updated_at = ? WHERE id = ?").run(this.now().toISOString(), id);
   }
 
   lastEventId(taskId: string, type: string): number {

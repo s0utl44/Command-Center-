@@ -64,10 +64,11 @@ Hermes działa w kontenerze, endpoint tylko na loopbacku. `web`/`worker` muszą 
 Na serwerze jest `real-estate-photo-workflow`. Instrukcja wykonania procesu wskazuje ten skill
 i przekazuje parametry (alias `wre`, folder, instrukcja obróbki), zamiast opisywać obróbkę od zera.
 
-## D-015 Rozpoznanie typu oferty z prefiksu folderu — przyjęta
-`WN` → wynajem, `WS` → sprzedaż, wyprowadzane z nazwy folderu. Gdy folder nie ma prefiksu,
-system pyta tylko o typ oferty. ❓ Struktura folderów na Drive (`obrobione` obok `fotki pozysk`
-czy wewnątrz folderu oferty) do potwierdzenia z treścią skilla `real-estate-photo-workflow`.
+## D-015 Typ oferty z prefiksu folderu, w przeciwnym razie pytanie — przyjęta
+`WN` → wynajem, `WS` → sprzedaż, wyprowadzane z nazwy folderu. Istniejące foldery na Drive
+(np. „Zyndrama 20 52”) nie mają prefiksów — wtedy system pyta tylko „wynajem czy sprzedaż?”.
+Skill zmienia dla sprzedaży wyłącznie słowo „wynajmu” → „sprzedaży” w stałym prompcie.
+Struktura potwierdzona skillem: `fotki - pozysk/<folder nieruchomości>/obrobione`.
 
 ## D-016 Odpytywanie stanu zamiast polegania na strumieniu zdarzeń — przyjęta
 Hermes nie ma potwierdzonego replayu zdarzeń, więc worker ustala stan krokami: `session.status` +
@@ -77,3 +78,17 @@ restarcie. Strumień zdarzeń może później przyspieszyć UI, ale nie decyduje
 ## D-017 Worker uruchamiany przez `node --import tsx` — tymczasowa
 Jeden proces (poprawna obsługa sygnałów pod systemd), bez osobnego kroku budowania. Do rewizji
 przy wdrożeniu (ewentualnie bundling esbuild).
+
+## D-018 „Dokończ” w tej samej sesji Hermesa — przyjęta
+Skill `real-estate-photo-workflow` ma protokół wznawiania (manifest, rekoncyliacja Drive, bez
+ponownego renderowania opłaconych zdjęć). Dlatego domyślne ponowienie zadania `needs_attention`
+to nowe zlecenie-kontynuacja w tej samej sesji (`retry(..., "continue")`), a nie nowa sesja.
+„Od nowa” (`fresh`) pozostaje opcją. Każda próba ma własny znacznik `[zlecenie:<id>#<próba>]`,
+więc wynik poprzedniej próby nie zostanie pomylony z bieżącą. Wysłanie kontynuacji jest decyzją
+użytkownika — to nie jest automatyczne ponowienie (D-006 obowiązuje).
+
+## D-019 Raport `WYNIK (JSON)` wskazuje, gdzie weryfikować — przyjęta
+Użytkownik podaje często fragment nazwy („z Zyndrama”), a Hermes dopasowuje folder. Zlecenie
+wymaga na końcu linii `WYNIK (JSON): {source_folder_name, source_folder_id, destination_folder_id,
+destination_url, source_count, verified_count}`. Weryfikator liczy pliki sam, po ID folderów z tej
+linii; liczby z raportu nie są dowodem. Link i rzeczywista nazwa folderu trafiają do wyniku w UI.

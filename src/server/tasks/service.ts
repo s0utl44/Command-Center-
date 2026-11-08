@@ -85,14 +85,21 @@ export class TaskService {
   }
 
   /**
-   * Świadome ponowienie przez użytkownika zadania wymagającego uwagi. Tworzy NOWĄ sesję Hermesa.
-   * UI musi ostrzec, że poprzednie zlecenie mogło zostać częściowo wykonane.
+   * Świadoma decyzja użytkownika dla zadania wymagającego uwagi:
+   * - `continue` („Dokończ”): nowe zlecenie w TEJ SAMEJ sesji Hermesa — skill odtwarza stan
+   *   z Drive i manifestu i nie powtarza ukończonych etapów;
+   * - `fresh` („Od nowa”): nowa sesja. UI musi ostrzec, że poprzednie zlecenie mogło być częściowo wykonane.
    */
-  retry(taskId: string): Task {
+  retry(taskId: string, mode: "continue" | "fresh" = "continue"): Task {
     const task = this.require(taskId);
     if (task.status !== "needs_attention") throw new Error("Ponowić można tylko zadanie wymagające uwagi");
-    this.tasks.clearExecution(task.id);
-    return this.tasks.transition(task.id, "needs_attention", "queued", "retried", { result: null }, { previousSession: task.hermesSessionId });
+    const effective = mode === "continue" && task.hermesSessionId ? "continue" : "fresh";
+    if (effective === "continue") this.tasks.clearPromptSubmission(task.id);
+    else this.tasks.clearExecution(task.id);
+    return this.tasks.transition(task.id, "needs_attention", "queued", "retried", { result: null }, {
+      mode: effective,
+      previousSession: task.hermesSessionId,
+    });
   }
 
   cancel(taskId: string): Task {

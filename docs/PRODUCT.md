@@ -38,9 +38,11 @@ Chat i pełna historia są dostępne jako szczegóły zadania, ale nie są ekran
 ### 1. Obróbka zdjęć WRE (`wre-photo-edit`)
 
 - Konto: Google Drive `d.lys@wrenieruchomosci.pl`, alias `wre`.
-- Folder źródłowy: `fotki pozysk`; folder docelowy: `obrobione`.
-- Prefiksy folderów: `WN` = wynajem, `WS` = sprzedaż.
-- Obróbka realistyczna: zachowany układ, meble i geometria.
+- Struktura: `fotki - pozysk / <folder nieruchomości> / obrobione`.
+- Prefiksy folderów: `WN` = wynajem, `WS` = sprzedaż; bez prefiksu system pyta o typ oferty.
+- Nazwa folderu może być fragmentem („z Zyndrama”) — dopasowuje go Hermes, a wynik pokazuje
+  rzeczywistą nazwę i link do `obrobione`.
+- Obróbka realistyczna wg stałego promptu ze skilla: zachowany układ, meble i geometria.
 - Weryfikacja: liczba plików wynikowych = liczba źródłowych (N/N), sprawdzona osobnym odczytem.
 - Użytkownik podaje głównie nazwę folderu i ewentualnie inną instrukcję obróbki.
 - Na serwerze istnieje już skill Hermesa `real-estate-photo-workflow` — proces go wywołuje, a nie duplikuje.

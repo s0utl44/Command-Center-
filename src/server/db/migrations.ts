@@ -49,4 +49,7 @@ export const MIGRATIONS: readonly string[] = [
   );
   CREATE INDEX task_events_task ON task_events(task_id, id);
   `,
+  `
+  ALTER TABLE tasks ADD COLUMN hermes_session_attempt INTEGER;
+  `,
 ];

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { resolveAccount } from "@/core/connections";
-import { buildPrompt, taskMarker, type FileCounter, type HermesGateway } from "@/core/execution";
+import { buildPrompt, parseReportResult, taskMarker, type FileCounter, type FolderRef, type HermesGateway } from "@/core/execution";
 import { renderTemplate, type ProcessDefinition } from "@/core/process";
 import type { TaskResult } from "@/core/task-result";
 import type { ProcessRepository } from "@/server/db/processes";
@@ -76,7 +76,8 @@ export class Worker {
     if (task.status === "verifying") return this.stepVerifying(task);
   }
 
-  private async stepRunning(task: Task): Promise<void> {
+  private async stepRunning(claimed: Task): Promise<void> {
+    let task = claimed;
     const version = this.processes.getVersion(task.processVersionId);
     if (!version) throw new Error(`Brak wersji procesu ${task.processVersionId}`);
     const definition = version.definition;
@@ -89,14 +90,19 @@ export class Worker {
       } catch (error) {
         return this.transientError(task, "hermes-error", `Nie udało się utworzyć sesji Hermesa: ${String(error)}`);
       }
-      this.tasks.setHermesSession(task.id, sessionId);
+      this.tasks.setHermesSession(task.id, sessionId, task.attempts);
+      task = { ...task, hermesSessionId: sessionId, hermesSessionAttempt: task.attempts };
     }
+    const marker = taskMarker(task.id, task.attempts);
 
     // 2. Zlecenie — najpierw zapis „mogło zostać wysłane”, potem jedno wywołanie. Bez ponowień.
     if (!task.promptSubmittedAt) {
       const account = resolveAccount(definition);
       const prompt = buildPrompt({
         taskId: task.id,
+        attempt: task.attempts,
+        // Sesja z wcześniejszej próby = świadome „Dokończ” użytkownika.
+        continuation: task.hermesSessionAttempt !== null && task.hermesSessionAttempt < task.attempts,
         processKey: definition.key,
         processVersion: version.version,
         accountAlias: account.alias,
@@ -117,7 +123,7 @@ export class Worker {
     // 3. Odczyt stanu z Hermesa.
     let state;
     try {
-      state = await this.hermes.inspect(sessionId, taskMarker(task.id));
+      state = await this.hermes.inspect(sessionId, marker);
     } catch (error) {
       return this.transientError(task, "hermes-error", `Brak połączenia z Hermesem: ${String(error)}`);
     }
@@ -168,24 +174,40 @@ export class Worker {
     }
 
     const account = resolveAccount(definition);
+    // Raport Hermesa wskazuje tylko GDZIE liczyć (rzeczywista nazwa i ID folderów). Liczymy sami.
+    const reported = previous.report ? parseReportResult(previous.report) : null;
+    const folderParams = { ...task.params, ...(reported?.source_folder_name ? { folder: reported.source_folder_name } : {}) };
+    const source: FolderRef = {
+      path: renderTemplate(verification.sourcePath, folderParams),
+      ...(reported?.source_folder_id ? { id: reported.source_folder_id } : {}),
+    };
+    const target: FolderRef = {
+      path: renderTemplate(verification.targetPath, folderParams),
+      ...(reported?.destination_folder_id ? { id: reported.destination_folder_id } : {}),
+    };
     let expected: number | null;
     let actual: number | null;
     try {
-      expected = await this.files.countFiles(account.alias, renderTemplate(verification.sourcePath, task.params));
-      actual = await this.files.countFiles(account.alias, renderTemplate(verification.targetPath, task.params));
+      expected = await this.files.countFiles(account.alias, source);
+      actual = await this.files.countFiles(account.alias, target);
     } catch (error) {
       return this.transientError(task, "verification-error", `Nie udało się policzyć plików: ${String(error)}`);
     }
 
     const passed = expected !== null && expected > 0 && actual === expected;
     const check = { expected, actual, passed };
+    const extras = {
+      ...(previous.report ? { report: previous.report } : {}),
+      ...(reported?.destination_url ? { link: reported.destination_url } : {}),
+      ...(reported?.source_folder_name ? { resolvedFolder: reported.source_folder_name } : {}),
+    };
     if (passed) {
       this.tasks.transition(task.id, "verifying", "succeeded", "verified", {
         result: {
-          summary: renderTemplate(definition.reporting.success, { ...task.params, verified: `${actual}/${expected}` }),
+          summary: renderTemplate(definition.reporting.success, { ...folderParams, verified: `${actual}/${expected}` }),
           simulated: this.simulated,
-          report: previous.report,
           verification: check,
+          ...extras,
         } satisfies TaskResult,
       });
     } else {
@@ -193,9 +215,9 @@ export class Worker {
         result: {
           summary: `Weryfikacja nie przeszła: ${actual ?? "brak folderu"}/${expected ?? "brak folderu"} plików.`,
           simulated: this.simulated,
-          report: previous.report,
           verification: check,
           problem: "Liczba plików wynikowych nie zgadza się z liczbą zdjęć źródłowych.",
+          ...extras,
         } satisfies TaskResult,
       });
     }

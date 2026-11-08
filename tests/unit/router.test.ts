@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseProcessDefinition, type ProcessDefinition } from "@/core/process";
-import { DEFAULT_PHOTO_INSTRUCTION, wrePhotoEditV1 } from "@/core/processes/wre-photo-edit";
+import { wrePhotoEditV1 } from "@/core/processes/wre-photo-edit";
 import { route, type RouteMatch } from "@/core/router";
 
 const wre = parseProcessDefinition(wrePhotoEditV1);
@@ -22,8 +22,19 @@ describe("router regułowy — obróbka zdjęć WRE", () => {
     expect(r.process.key).toBe("wre-photo-edit");
     expect(r.params.folder).toBe(folder);
     expect(r.params.listing_type).toBe(listingType);
-    expect(r.params.instruction).toBe(DEFAULT_PHOTO_INSTRUCTION);
+    expect(r.params.extra_instruction).toBe("brak");
     expect(r.missing).toEqual([]);
+  });
+
+  it.each([
+    ["Obrób zdjęcia z Zyndrama 20 52", "Zyndrama 20 52"],
+    ["obrabiaj zdjęcia z Pan Mateusz - Orląt Lwowskich 10 10", "Pan Mateusz - Orląt Lwowskich 10 10"],
+    ["zrób mi te fotki ze Żmigrodzkiej", "Żmigrodzkiej"],
+  ])("folder podany nazwą lokalizacji: %s", (utterance, folder) => {
+    const r = match(utterance);
+    expect(r.params.folder).toBe(folder);
+    // Istniejące foldery nie mają prefiksu WN/WS — pytamy tylko o typ oferty.
+    expect(r.missing.map((m) => m.name)).toEqual(["listing_type"]);
   });
 
   it("pyta o folder, gdy go brakuje", () => {
@@ -38,10 +49,10 @@ describe("router regułowy — obróbka zdjęć WRE", () => {
     expect(r.missing).toEqual([{ name: "listing_type", question: "Czy to wynajem (WN), czy sprzedaż (WS)?", options: ["wynajem", "sprzedaż"] }]);
   });
 
-  it("przyjmuje inną instrukcję obróbki", () => {
+  it("przyjmuje dodatkową instrukcję obróbki", () => {
     const r = match("Obrób zdjęcia WS Wola, instrukcja: tylko rozjaśnij");
     expect(r.params.folder).toBe("WS Wola");
-    expect(r.params.instruction).toBe("tylko rozjaśnij");
+    expect(r.params.extra_instruction).toBe("tylko rozjaśnij");
   });
 
   it("nie dopasowuje niezwiązanych poleceń", () => {

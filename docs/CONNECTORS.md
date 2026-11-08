@@ -26,6 +26,24 @@ Status oznaczeń: ✅ potwierdzone audytem, ❓ do potwierdzenia, 🧪 obecnie m
 Każdy proces ma przypisany alias. Backend odrzuca zadanie, które próbuje użyć konta z innej
 przestrzeni niż proces (np. proces WRE na koncie prywatnym).
 
+## Proces zdjęć WRE — fakty ze skilla `real-estate-photo-workflow` ✅
+
+Źródło: oczyszczony eksport skilla z `/opt/data/skills/productivity/real-estate-photo-workflow`.
+
+- Połączenie Drive WRE w Composio: `googledrive_heaps-acmic` (alias `wre`). Trzeba je podawać
+  przy **każdym** wywołaniu Drive — domyślne konto Composio może być prywatnym SOTULDROP.
+- Struktura: `Fotki pozysk / fotki - pozysk / <folder nieruchomości> / obrobione`.
+  Nazwy folderów to zwykle osoba i/lub adres (np. „Zyndrama 20 52”); użytkownik często podaje fragment.
+- Stała autoryzacja Dominika: pobranie zdjęć, realistyczna obróbka, QA, utworzenie `obrobione`
+  i upload — bez dodatkowych pytań. Zgoda potrzebna przy usuwaniu/nadpisywaniu oryginałów,
+  publikacji gdzie indziej, istotnej zmianie nieruchomości.
+- Stały prompt obróbki (`references/photo-prompt.md`) — nie zmieniać bez zgody Dominika.
+- Zakończenie wg skilla: upload + zdalna weryfikacja N/N + link do folderu.
+- Skill wznawia przerwane zadania z manifestu i Drive, bez ponownego renderowania (→ D-018).
+- Hermes może zgłaszać techniczne prośby o zgodę (np. transfer plików przez tunel) — trafią do
+  użytkownika jako `approval.request` (obsługa z aplikacji w etapie 6).
+- Identyfikatory folderów Drive nie są zapisywane w tym repozytorium — zna je skill.
+
 ## Co wiemy o stronie serwera ✅
 
 - Composio jest dostępne w Hermesie; potwierdzone kategorie HubSpot: wyszukiwanie i odczyt
@@ -49,6 +67,8 @@ W trybie mock ekran pokazuje plakietkę „SYMULACJA”.
 ## Interfejs adaptera (szkic)
 
 ```ts
+// Weryfikacja zdjęć: lista bezpośrednich dzieci folderu, mimeType image/*, trashed=false,
+// na koncie wre — po ID folderów z linii WYNIK (JSON) (D-019).
 interface ConnectionStatusProvider {
   list(): Promise<ConnectionStatus[]>;                 // prawdziwy stan z Composio
   reauthorizeUrl(alias: string, service: Service): Promise<string>;
@@ -60,6 +80,7 @@ interface ConnectionStatusProvider {
 - [ ] Potwierdzić w Composio aktywne połączenia: Drive `wre`, Gmail `wre`, Gmail `sotuldrop`, HubSpot.
 - [ ] Ustalić identyfikatory connected accounts Composio dla każdego aliasu (do konfiguracji backendu).
 - [ ] Klucz Composio dla backendu jako zmienna środowiskowa serwera (nie w repo).
-- [ ] Sprawdzić, jak skill `real-estate-photo-workflow` wybiera konto Drive — musi dostać alias `wre`.
+- [x] Skill `real-estate-photo-workflow` wybiera konto przez alias `wre` / `googledrive_heaps-acmic` (potwierdzone).
+- [ ] Sprawdzić, czy połączenie `googledrive_heaps-acmic` jest aktywne w Composio.
 - [ ] Zmierzyć czas i koszt obróbki jednego zdjęcia (benchmark), zanim podamy szacunki w UI.
 - [ ] Ustalić podpis i styl maili dla każdego konta.
