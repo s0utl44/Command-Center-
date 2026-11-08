@@ -104,3 +104,14 @@ odporne na restart `web` i `worker`; przy jednym użytkowniku koszt jest pomijal
 od razu stosuje odpowiedź na własną akcję (nowsza wersja zadania wygrywa), żeby nie pokazywać
 przez chwilę poprzedniego zadania.
 
+
+## D-022 Service worker nie cache'uje danych — przyjęta
+Stan zadań pochodzi wyłącznie z serwera. SW nigdy nie odpowiada z cache dla `/api/*`, a bez sieci
+pokazuje stronę offline zamiast nieaktualnych danych. Cache tylko dla niezmiennych zasobów.
+
+## D-023 Instalowalność sprawdzana wprost — przyjęta
+`Page.getInstallabilityErrors` w headless Chromium zwraca pustą listę także dla strony bez
+manifestu (sprawdzone kontrolą negatywną), więc test e2e sprawdza kryteria bezpośrednio:
+podpięty manifest sparsowany bez błędów (`Page.getAppManifest`), wymagane pola, ikony 192/512
+i aktywny service worker kontrolujący stronę. Instalację na prawdziwym telefonie trzeba
+potwierdzić ręcznie po wdrożeniu na HTTPS.

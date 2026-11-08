@@ -84,3 +84,21 @@ textarea, input { width: 100%; font: inherit; color: var(--text); background: va
 .approval ul { margin: 4px 0 8px; padding-left: 20px; }
 .spinner { width: 12px; height: 12px; border: 2px solid var(--muted); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- Dzisiaj i szczegóły (etap 4) --- */
+.today { display: grid; gap: 16px; }
+.today-group h2 { font-size: 1rem; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+.today-group .count { font-size: 0.8rem; color: var(--muted); background: var(--surface); border-radius: 999px; padding: 1px 8px; }
+.group-waiting .count, .group-problems .count { color: #f5c26b; }
+.today-group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.today-item { display: grid; gap: 2px; padding: 12px 14px; background: var(--surface); border-radius: 12px; color: var(--text); text-decoration: none; border: 1px solid #262a33; }
+.today-item .headline { font-weight: 600; overflow-wrap: anywhere; }
+.today-item .meta { color: var(--muted); font-size: 0.8rem; }
+.group-problems .today-item { border-color: #5a2a2a; }
+.group-waiting .today-item { border-color: #5a4a1e; }
+.detail { display: grid; gap: 12px; }
+.detail h2 { font-size: 1rem; margin: 8px 0 0; }
+.back { color: var(--accent); text-decoration: none; }
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.timeline li { display: flex; gap: 12px; font-size: 0.9rem; }
+.timeline time { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 64px; }

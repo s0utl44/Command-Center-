@@ -31,7 +31,7 @@ export function toTaskView(runtime: Runtime, task: Task): TaskView {
   };
 }
 
-export function snapshot(runtime: Runtime, limit = 30): Snapshot {
+export function snapshot(runtime: Runtime, limit = 100): Snapshot {
   return {
     modes: { hermes: runtime.hermes.mode, stt: runtime.stt.mode },
     tasks: runtime.tasks.list(limit).map((t) => toTaskView(runtime, t)),

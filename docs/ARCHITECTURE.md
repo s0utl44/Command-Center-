@@ -169,6 +169,16 @@ Worker ma opcjonalny healthcheck `WORKER_HEALTH_PORT` (tylko `127.0.0.1`).
   aplikacji (iOS: PWA dodana do ekranu głównego). Etap późniejszy.
 - Odczyt wyniku głosem: `speechSynthesis` w przeglądarce.
 
+## PWA (etap 4)
+
+- Manifest (`/manifest.webmanifest`): `standalone`, ikony PNG 192/512 + maskable, skróty Mów i Dzisiaj.
+- Service worker (`/sw.js`, tylko build produkcyjny): `/api/*` zawsze z sieci i nigdy z cache;
+  `/_next/static` i ikony cache-first; nawigacja bez sieci → `/offline.html`.
+- iOS: instalacja przez Udostępnij → „Do ekranu początkowego”; ikona `apple-touch-icon.png`.
+  Web Push na iOS działa tylko w zainstalowanej PWA (etap 10).
+- Instalacja wymaga HTTPS (na produkcji: `centrum.startagent.online`).
+- Ikony generuje `node scripts/generate-icons.mjs` z plików SVG.
+
 ## Głos
 
 MediaRecorder w przeglądarce → upload do `web` → adapter STT → transkrypcja.

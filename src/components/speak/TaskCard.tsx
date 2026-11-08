@@ -12,7 +12,7 @@ function speak(text: string) {
   window.speechSynthesis.speak(u);
 }
 
-export function TaskCard({ task, onDismiss, onUpdate }: { task: TaskView; onDismiss: () => void; onUpdate: (task: TaskView) => void }) {
+export function TaskCard({ task, onDismiss, onUpdate }: { task: TaskView; onDismiss?: () => void; onUpdate: (task: TaskView) => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -124,9 +124,11 @@ export function TaskCard({ task, onDismiss, onUpdate }: { task: TaskView; onDism
               🔊 Odczytaj
             </button>
           )}
-          <button type="button" onClick={onDismiss}>
-            Nowe polecenie
-          </button>
+          {onDismiss && (
+            <button type="button" onClick={onDismiss}>
+              Nowe polecenie
+            </button>
+          )}
         </div>
       )}
 

@@ -31,7 +31,15 @@ export type CommandResult =
   | { kind: "ambiguous"; candidates: { key: string; name: string }[] }
   | { kind: "no-match" };
 
+export interface TaskEventView {
+  at: string;
+  type: string;
+  from: string | null;
+  to: string | null;
+}
+
 export const api = {
+  task: (id: string) => request<{ task: TaskView; events: TaskEventView[] }>(`/api/tasks/${id}`),
   transcribe(audio: Blob): Promise<{ text: string; simulated: boolean }> {
     const form = new FormData();
     form.append("audio", audio, "nagranie");
